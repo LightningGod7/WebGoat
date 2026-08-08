@@ -59,10 +59,15 @@ public class SqlInjectionLesson5 implements AssignmentEndpoint {
 
   protected AttackResult injectableQuery(String query) {
     try (Connection connection = dataSource.getConnection()) {
-      try (Statement statement =
-          connection.createStatement(
-              ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_UPDATABLE)) {
-        statement.executeQuery(query);
+      // The request value is bound as data to a fixed lookup. User supplied SQL such as a
+      // GRANT statement is never executed.
+      try (java.sql.PreparedStatement statement =
+          connection.prepareStatement(
+              "SELECT * FROM user_data WHERE last_name = ?",
+              ResultSet.TYPE_SCROLL_INSENSITIVE,
+              ResultSet.CONCUR_UPDATABLE)) {
+        statement.setString(1, query == null ? "" : query);
+        statement.executeQuery();
         if (checkSolution(connection)) {
           return success(this).build();
         }

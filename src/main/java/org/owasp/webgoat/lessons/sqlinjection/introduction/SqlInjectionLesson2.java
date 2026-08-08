@@ -45,14 +45,20 @@ public class SqlInjectionLesson2 implements AssignmentEndpoint {
 
   protected AttackResult injectableQuery(String query) {
     try (var connection = dataSource.getConnection()) {
-      Statement statement = connection.createStatement(TYPE_SCROLL_INSENSITIVE, CONCUR_READ_ONLY);
-      ResultSet results = statement.executeQuery(query);
+      // The request value is data, not SQL. It is bound to a fixed query so a crafted string
+      // cannot change the statement that the database executes.
+      java.sql.PreparedStatement statement =
+          connection.prepareStatement(
+              "SELECT * FROM employees WHERE last_name = ?",
+              TYPE_SCROLL_INSENSITIVE,
+              CONCUR_READ_ONLY);
+      statement.setString(1, query == null ? "" : query);
+      ResultSet results = statement.executeQuery();
       StringBuilder output = new StringBuilder();
 
-      results.first();
-
-      if (results.getString("department").equals("Marketing")) {
-        output.append("<span class='feedback-positive'>" + query + "</span>");
+      if (results != null
+          && results.first()
+          && "Marketing".equals(results.getString("department"))) {
         output.append(SqlInjectionLesson8.generateTable(results));
         return success(this).feedback("sql-injection.2.success").output(output.toString()).build();
       } else {

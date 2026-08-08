@@ -41,15 +41,20 @@ public class SqlInjectionLesson4 implements AssignmentEndpoint {
 
   protected AttackResult injectableQuery(String query) {
     try (Connection connection = dataSource.getConnection()) {
+      // A column name cannot be bound as a parameter, so the request value is validated as a
+      // plain SQL identifier and placed into a fixed ALTER statement. Whitespace, quotes and
+      // statement separators are rejected before anything reaches the database.
+      if (query == null || !query.matches("[A-Za-z_][A-Za-z0-9_]{0,29}")) {
+        return failed(this).output("Invalid column name").build();
+      }
       try (Statement statement =
           connection.createStatement(TYPE_SCROLL_INSENSITIVE, CONCUR_READ_ONLY)) {
-        statement.executeUpdate(query);
+        statement.executeUpdate("ALTER TABLE employees ADD COLUMN " + query + " VARCHAR(20)");
         connection.commit();
         ResultSet results = statement.executeQuery("SELECT phone from employees;");
         StringBuilder output = new StringBuilder();
         // user completes lesson if column phone exists
         if (results.first()) {
-          output.append("<span class='feedback-positive'>" + query + "</span>");
           return success(this).output(output.toString()).build();
         } else {
           return failed(this).output(output.toString()).build();
