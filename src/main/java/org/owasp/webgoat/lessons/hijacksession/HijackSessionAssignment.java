@@ -72,6 +72,8 @@ public class HijackSessionAssignment implements AssignmentEndpoint {
   private void setCookie(HttpServletResponse response, String cookieValue) {
     Cookie cookie = new Cookie(COOKIE_NAME, cookieValue);
     cookie.setPath("/WebGoat");
+    // The session identifier is never needed by client side script.
+    cookie.setHttpOnly(true);
     cookie.setSecure(true);
     response.addCookie(cookie);
   }

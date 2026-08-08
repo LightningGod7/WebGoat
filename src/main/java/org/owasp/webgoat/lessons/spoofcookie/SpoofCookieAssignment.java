@@ -79,6 +79,8 @@ public class SpoofCookieAssignment implements AssignmentEndpoint {
       String newCookieValue = EncDec.encode(lowerCasedUsername);
       Cookie newCookie = new Cookie(COOKIE_NAME, newCookieValue);
       newCookie.setPath("/WebGoat");
+      // The authentication cookie is never needed by client side script.
+      newCookie.setHttpOnly(true);
       newCookie.setSecure(true);
       response.addCookie(newCookie);
       return informationMessage(this)
