@@ -4,6 +4,7 @@
  */
 package org.owasp.webgoat.lessons.challenges.challenge7;
 
+import java.security.SecureRandom;
 import java.util.Random;
 
 /**
@@ -15,12 +16,16 @@ import java.util.Random;
 public class PasswordResetLink {
 
   public String createPasswordReset(String username, String key) {
-    Random random = new Random();
-    if (username.equalsIgnoreCase("admin")) {
-      // Admin has a fix reset link
-      random.setSeed(key.length());
+    // A reset token must be unpredictable and must not be derived from the account name.
+    // Seeding a non cryptographic generator with a known value made the administrator's
+    // link reproducible by anyone able to read this code.
+    byte[] token = new byte[20];
+    new SecureRandom().nextBytes(token);
+    StringBuilder sb = new StringBuilder(token.length * 2);
+    for (byte b : token) {
+      sb.append(String.format("%02x", b));
     }
-    return scramble(random, scramble(random, scramble(random, MD5.getHashString(username))));
+    return sb.toString();
   }
 
   public static String scramble(Random random, String inputString) {

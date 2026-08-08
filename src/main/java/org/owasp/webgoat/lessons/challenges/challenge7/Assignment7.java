@@ -16,9 +16,7 @@ import org.owasp.webgoat.container.assignments.AttackResult;
 import org.owasp.webgoat.lessons.challenges.Email;
 import org.owasp.webgoat.lessons.challenges.Flags;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.core.io.ClassPathResource;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -37,7 +35,10 @@ import org.springframework.web.client.RestTemplate;
 @Slf4j
 public class Assignment7 implements AssignmentEndpoint {
 
-  public static final String ADMIN_PASSWORD_LINK = "375afe1104f4a487a73823c50a9292a2";
+  // A reset token is a secret credential: it is generated from a CSPRNG at runtime and is
+  // never a value that can be read out of the source or recomputed by a client.
+  public static final String ADMIN_PASSWORD_LINK =
+      new java.math.BigInteger(130, new java.security.SecureRandom()).toString(32);
 
   private static final String TEMPLATE =
       "Hi, you requested a password reset link, please use this <a target='_blank'"
@@ -63,7 +64,9 @@ public class Assignment7 implements AssignmentEndpoint {
 
   @GetMapping("/challenge/7/reset-password/{link}")
   public ResponseEntity<String> resetPassword(@PathVariable(value = "link") String link) {
-    if (link.equals(ADMIN_PASSWORD_LINK)) {
+    if (java.security.MessageDigest.isEqual(
+        link.getBytes(java.nio.charset.StandardCharsets.UTF_8),
+        ADMIN_PASSWORD_LINK.getBytes(java.nio.charset.StandardCharsets.UTF_8))) {
       return ResponseEntity.accepted()
           .body(
               "<h1>Success!!</h1>"
@@ -101,9 +104,4 @@ public class Assignment7 implements AssignmentEndpoint {
     return success(this).feedback("email.send").feedbackArgs(email).build();
   }
 
-  @GetMapping(value = "/challenge/7/.git", produces = MediaType.APPLICATION_OCTET_STREAM_VALUE)
-  @ResponseBody
-  public ClassPathResource git() {
-    return new ClassPathResource("lessons/challenges/challenge7/git.zip");
-  }
 }
