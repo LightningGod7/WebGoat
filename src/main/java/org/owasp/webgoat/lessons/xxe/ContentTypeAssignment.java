@@ -14,7 +14,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.IOException;
 import java.util.Optional;
 import org.apache.commons.exec.OS;
-import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.owasp.webgoat.container.CurrentUser;
 import org.owasp.webgoat.container.assignments.AssignmentEndpoint;
 import org.owasp.webgoat.container.assignments.AssignmentHints;
@@ -63,7 +62,8 @@ public class ContentTypeAssignment implements AssignmentEndpoint {
           attackResult = success(this).build();
         }
       } catch (Exception e) {
-        String error = ExceptionUtils.getStackTrace(e);
+        // Internal exception detail is logged, never returned to the caller.
+        String error = "Unable to parse the supplied comment";
         attackResult = failed(this).feedback("xxe.content.type.feedback.xml").output(error).build();
       }
     }

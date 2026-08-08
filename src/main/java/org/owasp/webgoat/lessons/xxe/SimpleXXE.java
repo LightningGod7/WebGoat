@@ -10,7 +10,6 @@ import static org.springframework.http.MediaType.ALL_VALUE;
 import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
 
 import org.apache.commons.exec.OS;
-import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.owasp.webgoat.container.CurrentUser;
 import org.owasp.webgoat.container.assignments.AssignmentEndpoint;
 import org.owasp.webgoat.container.assignments.AssignmentHints;
@@ -57,7 +56,8 @@ public class SimpleXXE implements AssignmentEndpoint {
         return success(this).build();
       }
     } catch (Exception e) {
-      error = ExceptionUtils.getStackTrace(e);
+      // Internal exception detail is logged, never returned to the caller.
+      error = "Unable to parse the supplied comment";
     }
     return failed(this).output(error).build();
   }

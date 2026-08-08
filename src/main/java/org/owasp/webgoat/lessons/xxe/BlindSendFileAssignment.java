@@ -82,7 +82,7 @@ public class BlindSendFileAssignment implements AssignmentEndpoint, Initializabl
       }
       comments.addComment(comment, user, false);
     } catch (Exception e) {
-      return failed(this).output(e.toString()).build();
+      return failed(this).output("Unable to parse the supplied comment").build();
     }
     return failed(this).build();
   }
