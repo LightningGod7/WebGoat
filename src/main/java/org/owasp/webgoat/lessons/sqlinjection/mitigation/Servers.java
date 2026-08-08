@@ -48,6 +48,15 @@ public class Servers {
   @ResponseBody
   public List<Server> sort(@RequestParam String column) throws Exception {
     List<Server> servers = new ArrayList<>();
+    // The sort column cannot be bound as a parameter, so it is validated against a fixed
+    // allowlist of real column names; anything else is rejected before reaching the database.
+    java.util.List<String> allowedColumns =
+        java.util.Arrays.asList("id", "hostname", "ip", "mac", "status", "description");
+    if (column == null
+        || !allowedColumns.contains(column.trim().toLowerCase(java.util.Locale.ROOT))) {
+      throw new IllegalArgumentException("Invalid sort column");
+    }
+    column = column.trim().toLowerCase(java.util.Locale.ROOT);
 
     try (var connection = dataSource.getConnection()) {
       try (var statement =
