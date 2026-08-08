@@ -41,6 +41,10 @@ public class SqlInjectionLesson13 implements AssignmentEndpoint {
   @PostMapping("/SqlInjectionMitigations/attack12a")
   @ResponseBody
   public AttackResult completed(@RequestParam String ip) {
+    // Only a syntactically valid address is accepted before the lookup is performed.
+    if (ip == null || !ip.matches("[0-9a-fA-F:.]{1,45}")) {
+      return failed(this).build();
+    }
     try (Connection connection = dataSource.getConnection();
         PreparedStatement preparedStatement =
             connection.prepareStatement("select ip from servers where ip = ? and hostname = ?")) {

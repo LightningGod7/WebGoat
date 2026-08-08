@@ -29,9 +29,12 @@ public class SqlOnlyInputValidation implements AssignmentEndpoint {
   @PostMapping("/SqlOnlyInputValidation/attack")
   @ResponseBody
   public AttackResult attack(@RequestParam("userid_sql_only_input_validation") String userId) {
-    if (userId.contains(" ")) {
+    // Input validation is a defence in depth measure, not the control: the identifier is
+    // constrained to the expected type before it ever reaches the data layer.
+    if (userId == null || !userId.matches("[0-9]{1,12}")) {
       return failed(this).feedback("SqlOnlyInputValidation-failed").build();
     }
+
     AttackResult attackResult = lesson6a.injectableQuery(userId);
     return new AttackResult(
         attackResult.isLessonCompleted(),
