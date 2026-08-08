@@ -35,7 +35,20 @@ public class ForgedReviews implements AssignmentEndpoint {
 
   private static final Map<String, List<Review>> userReviews = new HashMap<>();
   private static final List<Review> REVIEWS = new ArrayList<>();
-  private static final String weakAntiCSRF = "2aa14227b9a13d0bede0388a7fba9aa9";
+  // A single hard coded value is not an anti CSRF token: it is public knowledge as soon
+  // as one page is viewed. Tokens are per session and unpredictable.
+  private static final java.security.SecureRandom SECURE_RANDOM = new java.security.SecureRandom();
+  private static final String CSRF_TOKEN_ATTRIBUTE = "csrf-review-token";
+
+  private static String currentToken(HttpServletRequest request) {
+    var session = request.getSession();
+    Object token = session.getAttribute(CSRF_TOKEN_ATTRIBUTE);
+    if (token == null) {
+      token = new java.math.BigInteger(160, SECURE_RANDOM).toString(32);
+      session.setAttribute(CSRF_TOKEN_ATTRIBUTE, token);
+    }
+    return (String) token;
+  }
 
   static {
     REVIEWS.add(
@@ -80,25 +93,27 @@ public class ForgedReviews implements AssignmentEndpoint {
         (request.getHeader("referer") == null) ? "NULL" : request.getHeader("referer");
     final String[] refererArr = referer.split("/");
 
+    // The review body is rendered back to every reader, so it is escaped on the way in
+    // and can never become stored script.
     Review review = new Review();
-    review.setText(reviewText);
+    review.setText(org.springframework.web.util.HtmlUtils.htmlEscape(String.valueOf(reviewText)));
     review.setDateTime(LocalDateTime.now().format(fmt));
     review.setUser(username);
     review.setStars(stars);
     var reviews = userReviews.getOrDefault(username, new ArrayList<>());
     reviews.add(review);
     userReviews.put(username, reviews);
-    // short-circuit
-    if (validateReq == null || !validateReq.equals(weakAntiCSRF)) {
+    // Two independent defences: the request must carry this session's secret token, and
+    // it must have been initiated by this origin.
+    if (validateReq == null
+        || !java.security.MessageDigest.isEqual(
+            validateReq.getBytes(java.nio.charset.StandardCharsets.UTF_8),
+            currentToken(request).getBytes(java.nio.charset.StandardCharsets.UTF_8))) {
       return failed(this).feedback("csrf-you-forgot-something").build();
     }
-    // we have the spoofed files
-    if (referer != "NULL" && refererArr[2].equals(host)) {
+    if (!RequestOrigin.isSameOrigin(request)) {
       return failed(this).feedback("csrf-same-host").build();
-    } else {
-      return success(this)
-          .feedback("csrf-review.success")
-          .build(); // feedback("xss-stored-comment-failure")
     }
+    return failed(this).feedback("csrf-same-host").build();
   }
 }

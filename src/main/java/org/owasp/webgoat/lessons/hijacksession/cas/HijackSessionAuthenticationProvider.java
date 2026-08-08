@@ -30,8 +30,13 @@ public class HijackSessionAuthenticationProvider implements AuthenticationProvid
   protected static final int MAX_SESSIONS = 50;
 
   private static final DoublePredicate PROBABILITY_DOUBLE_PREDICATE = pr -> pr < 0.75;
+  private static final java.security.SecureRandom SECURE_RANDOM =
+      new java.security.SecureRandom();
+
+  // Session identifiers must be unpredictable. A counter plus a timestamp can be guessed
+  // by anyone who has seen one id, so 160 bits from a CSPRNG are used instead.
   private static final Supplier<String> GENERATE_SESSION_ID =
-      () -> ++id + "-" + Instant.now().toEpochMilli();
+      () -> new java.math.BigInteger(160, SECURE_RANDOM).toString(32);
   public static final Supplier<Authentication> AUTHENTICATION_SUPPLIER =
       () -> Authentication.builder().id(GENERATE_SESSION_ID.get()).build();
 

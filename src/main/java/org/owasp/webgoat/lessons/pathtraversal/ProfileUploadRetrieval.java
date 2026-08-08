@@ -97,13 +97,18 @@ public class ProfileUploadRetrieval implements AssignmentEndpoint {
     }
     try {
       var id = request.getParameter("id");
+      // Only a plain picture number can ever address a file here.
+      if (id != null && !id.matches("[0-9]{1,2}")) {
+        return ResponseEntity.badRequest().body("Only numeric picture ids are allowed");
+      }
       var catPicture =
           new File(catPicturesDirectory, (id == null ? RandomUtils.nextInt(1, 11) : id) + ".jpg");
-
-      if (catPicture.getName().toLowerCase().contains("path-traversal-secret.jpg")) {
-        return ResponseEntity.ok()
-            .contentType(MediaType.parseMediaType(MediaType.IMAGE_JPEG_VALUE))
-            .body(FileCopyUtils.copyToByteArray(catPicture));
+      // Defence in depth: the resolved file must stay inside the cat picture directory.
+      if (!catPicture
+          .getCanonicalFile()
+          .toPath()
+          .startsWith(catPicturesDirectory.getCanonicalFile().toPath())) {
+        return ResponseEntity.badRequest().body("Illegal path");
       }
       if (catPicture.exists()) {
         return ResponseEntity.ok()

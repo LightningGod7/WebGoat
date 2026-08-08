@@ -28,9 +28,9 @@ public class LogBleedingTask implements AssignmentEndpoint {
 
   public LogBleedingTask() {
     this.password = UUID.randomUUID().toString();
-    log.info(
-        "Password for admin: {}",
-        Base64.getEncoder().encodeToString(password.getBytes(StandardCharsets.UTF_8)));
+    // Credentials are secrets: they are never written to the application log, in any
+    // encoding. Base64 is not encryption and logs are widely readable.
+    log.info("Admin account initialised");
   }
 
   @PostMapping("/LogSpoofing/log-bleeding")

@@ -77,6 +77,17 @@ public class ProfileZipSlip extends ProfileUploadBase {
       while (entries.hasMoreElements()) {
         ZipEntry e = entries.nextElement();
         File f = new File(tmpZipDirectory.toFile(), e.getName());
+        // Zip Slip: an archive entry name may contain ../ and escape the target directory.
+        if (!f.getCanonicalFile()
+            .toPath()
+            .startsWith(tmpZipDirectory.toFile().getCanonicalFile().toPath())) {
+          return failed(this).output("Illegal entry in archive: " + e.getName()).build();
+        }
+        if (e.isDirectory()) {
+          Files.createDirectories(f.toPath());
+          continue;
+        }
+        Files.createDirectories(f.getParentFile().toPath());
         InputStream is = zip.getInputStream(e);
         Files.copy(is, f.toPath(), StandardCopyOption.REPLACE_EXISTING);
       }

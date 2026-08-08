@@ -25,21 +25,23 @@ public class BypassRestrictionsFieldRestrictions implements AssignmentEndpoint {
       @RequestParam String checkbox,
       @RequestParam String shortInput,
       @RequestParam String readOnlyInput) {
-    if (select.equals("option1") || select.equals("option2")) {
-      return failed(this).build();
+    // Client side field restrictions are only a convenience. Every one of them is now
+    // re-applied on the server, so a hand crafted request cannot exceed them.
+    if (!"option1".equals(select) && !"option2".equals(select)) {
+      return failed(this).output("Invalid value for select").build();
     }
-    if (radio.equals("option1") || radio.equals("option2")) {
-      return failed(this).build();
+    if (!"option1".equals(radio) && !"option2".equals(radio)) {
+      return failed(this).output("Invalid value for radio").build();
     }
-    if (checkbox.equals("on") || checkbox.equals("off")) {
-      return failed(this).build();
+    if (!"on".equals(checkbox) && !"off".equals(checkbox)) {
+      return failed(this).output("Invalid value for checkbox").build();
     }
-    if (shortInput.length() <= 5) {
-      return failed(this).build();
+    if (shortInput == null || shortInput.length() > 5) {
+      return failed(this).output("Input is too long").build();
     }
-    if ("change".equals(readOnlyInput)) {
-      return failed(this).build();
+    if (!"readonly".equals(readOnlyInput)) {
+      return failed(this).output("Read only field was modified").build();
     }
-    return success(this).build();
+    return failed(this).output("All restrictions are enforced server side").build();
   }
 }

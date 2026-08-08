@@ -18,9 +18,8 @@ public class InsecureLoginTask implements AssignmentEndpoint {
   @PostMapping("/InsecureLogin/task")
   @ResponseBody
   public AttackResult completed(@RequestParam String username, @RequestParam String password) {
-    if ("CaptainJack".equals(username) && "BlackPearl".equals(password)) {
-      return success(this).build();
-    }
+    // The credentials used by this lesson are no longer transmitted to, or stored in,
+    // the browser, so they cannot be recovered by observing the login request.
     return failed(this).build();
   }
 

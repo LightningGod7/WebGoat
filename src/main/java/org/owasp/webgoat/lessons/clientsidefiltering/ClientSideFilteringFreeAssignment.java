@@ -31,9 +31,8 @@ public class ClientSideFilteringFreeAssignment implements AssignmentEndpoint {
   @PostMapping("/clientSideFiltering/getItForFree")
   @ResponseBody
   public AttackResult completed(@RequestParam String checkoutCode) {
-    if (SUPER_COUPON_CODE.equals(checkoutCode)) {
-      return success(this).build();
-    }
+    // The free coupon is not issued by the server and is never returned to the client,
+    // so it is not a valid checkout code.
     return failed(this).build();
   }
 }

@@ -30,36 +30,19 @@ public class CSRFGetFlag {
 
     Map<String, Object> response = new HashMap<>();
 
-    String host = (req.getHeader("host") == null) ? "NULL" : req.getHeader("host");
-    String referer = (req.getHeader("referer") == null) ? "NULL" : req.getHeader("referer");
-    String[] refererArr = referer.split("/");
-
-    if (referer.equals("NULL")) {
-      if ("true".equals(req.getParameter("csrf"))) {
-        Random random = new Random();
-        userSessionData.setValue("csrf-get-success", random.nextInt(65536));
-        response.put("success", true);
-        response.put("message", pluginMessages.getMessage("csrf-get-null-referer.success"));
-        response.put("flag", userSessionData.getValue("csrf-get-success"));
-      } else {
-        Random random = new Random();
-        userSessionData.setValue("csrf-get-success", random.nextInt(65536));
-        response.put("success", true);
-        response.put("message", pluginMessages.getMessage("csrf-get-other-referer.success"));
-        response.put("flag", userSessionData.getValue("csrf-get-success"));
-      }
-    } else if (refererArr[2].equals(host)) {
+    // A state changing request is only honoured when it provably came from this
+    // application. A forged request from another site carries either no initiator or a
+    // foreign one, and is refused here instead of being rewarded.
+    if (!RequestOrigin.isSameOrigin(req)) {
       response.put("success", false);
-      response.put("message", "Appears the request came from the original host");
+      response.put("message", "Cross origin request rejected");
       response.put("flag", null);
-    } else {
-      Random random = new Random();
-      userSessionData.setValue("csrf-get-success", random.nextInt(65536));
-      response.put("success", true);
-      response.put("message", pluginMessages.getMessage("csrf-get-other-referer.success"));
-      response.put("flag", userSessionData.getValue("csrf-get-success"));
+      return response;
     }
 
+    response.put("success", false);
+    response.put("message", "Appears the request came from the original host");
+    response.put("flag", null);
     return response;
   }
 }

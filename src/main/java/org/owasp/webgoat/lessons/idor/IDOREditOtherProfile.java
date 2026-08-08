@@ -43,60 +43,25 @@ public class IDOREditOtherProfile implements AssignmentEndpoint {
       @PathVariable("userId") String userId, @RequestBody UserProfile userSubmittedProfile) {
 
     String authUserId = (String) userSessionData.getValue("idor-authenticated-user-id");
-    // this is where it starts ... accepting the user submitted ID and assuming it will be the same
-    // as the logged in userId and not checking for proper authorization
-    // Certain roles can sometimes edit others' profiles, but we shouldn't just assume that and let
-    // everyone, right?
-    // Except that this is a vulnerable app ... so we will
-    UserProfile currentUserProfile = new UserProfile(userId);
-    if (userSubmittedProfile.getUserId() != null
-        && !userSubmittedProfile.getUserId().equals(authUserId)) {
-      // let's get this started ...
-      currentUserProfile.setColor(userSubmittedProfile.getColor());
-      currentUserProfile.setRole(userSubmittedProfile.getRole());
-      // we will persist in the session object for now in case we want to refer back or use it later
-      userSessionData.setValue("idor-updated-other-profile", currentUserProfile);
-      if (currentUserProfile.getRole() <= 1
-          && currentUserProfile.getColor().equalsIgnoreCase("red")) {
-        return success(this)
-            .feedback("idor.edit.profile.success1")
-            .output(currentUserProfile.profileToMap().toString())
-            .build();
-      }
 
-      if (currentUserProfile.getRole() > 1
-          && currentUserProfile.getColor().equalsIgnoreCase("red")) {
-        return failed(this)
-            .feedback("idor.edit.profile.failure1")
-            .output(currentUserProfile.profileToMap().toString())
-            .build();
-      }
-
-      if (currentUserProfile.getRole() <= 1
-          && !currentUserProfile.getColor().equalsIgnoreCase("red")) {
-        return failed(this)
-            .feedback("idor.edit.profile.failure2")
-            .output(currentUserProfile.profileToMap().toString())
-            .build();
-      }
-
-      // else
-      return failed(this)
-          .feedback("idor.edit.profile.failure3")
-          .output(currentUserProfile.profileToMap().toString())
-          .build();
-    } else if (userSubmittedProfile.getUserId() != null
-        && userSubmittedProfile.getUserId().equals(authUserId)) {
+    // Horizontal access control: the caller may only edit their own profile. The id in the
+    // path AND the id in the body must both match the authenticated user.
+    if (authUserId == null
+        || !authUserId.equals(userId)
+        || userSubmittedProfile.getUserId() == null
+        || !userSubmittedProfile.getUserId().equals(authUserId)) {
       return failed(this).feedback("idor.edit.profile.failure4").build();
     }
 
-    if (currentUserProfile.getColor().equals("black") && currentUserProfile.getRole() <= 1) {
-      return success(this)
-          .feedback("idor.edit.profile.success2")
-          .output(userSessionData.getValue("idor-updated-own-profile").toString())
-          .build();
-    } else {
-      return failed(this).feedback("idor.edit.profile.failure3").build();
-    }
+    UserProfile currentUserProfile = new UserProfile(authUserId);
+    // Only non privileged attributes are accepted from the request body. "role" is
+    // authorization data and is never taken from user input (mass assignment).
+    currentUserProfile.setColor(userSubmittedProfile.getColor());
+    userSessionData.setValue("idor-updated-own-profile", currentUserProfile);
+
+    return failed(this)
+        .feedback("idor.edit.profile.failure3")
+        .output(currentUserProfile.profileToMap().toString())
+        .build();
   }
 }

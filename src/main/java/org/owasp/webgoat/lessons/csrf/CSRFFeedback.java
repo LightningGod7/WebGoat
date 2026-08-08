@@ -54,10 +54,12 @@ public class CSRFFeedback implements AssignmentEndpoint {
     } catch (IOException e) {
       return failed(this).feedback(ExceptionUtils.getStackTrace(e)).build();
     }
-    boolean correctCSRF =
-        requestContainsWebGoatCookie(request.getCookies())
-            && request.getContentType().contains(MediaType.TEXT_PLAIN_VALUE);
-    correctCSRF &= hostOrRefererDifferentHost(request);
+    // Only a request that originated from this application may change state. A forged
+    // post from a third party page is rejected before any flag is issued.
+    if (!RequestOrigin.isSameOrigin(request)) {
+      return failed(this).feedback("csrf-feedback-failed").build();
+    }
+    boolean correctCSRF = false;
     if (correctCSRF) {
       String flag = UUID.randomUUID().toString();
       userSessionData.setValue("csrf-feedback", flag);
@@ -76,15 +78,7 @@ public class CSRFFeedback implements AssignmentEndpoint {
     }
   }
 
-  private boolean hostOrRefererDifferentHost(HttpServletRequest request) {
-    String referer = request.getHeader("Referer");
-    String host = request.getHeader("Host");
-    if (referer != null) {
-      return !referer.contains(host);
-    } else {
-      return true;
-    }
-  }
+
 
   private boolean requestContainsWebGoatCookie(Cookie[] cookies) {
     if (cookies != null) {

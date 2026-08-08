@@ -35,30 +35,29 @@ public class BypassRestrictionsFrontendValidation implements AssignmentEndpoint 
     final String regex5 = "^\\d{5}$";
     final String regex6 = "^\\d{5}(-\\d{4})?$";
     final String regex7 = "^[2-9]\\d{2}-?\\d{3}-?\\d{4}$";
-    if (error > 0) {
-      return failed(this).build();
+    // Front end validation is advisory only. The identical rules are enforced here, so a
+    // request that bypasses the browser is rejected instead of accepted.
+    if (field1 == null || !field1.matches(regex1)) {
+      return failed(this).output("field1 is invalid").build();
     }
-    if (field1.matches(regex1)) {
-      return failed(this).build();
+    if (field2 == null || !field2.matches(regex2)) {
+      return failed(this).output("field2 is invalid").build();
     }
-    if (field2.matches(regex2)) {
-      return failed(this).build();
+    if (field3 == null || !field3.matches(regex3)) {
+      return failed(this).output("field3 is invalid").build();
     }
-    if (field3.matches(regex3)) {
-      return failed(this).build();
+    if (field4 == null || !field4.matches(regex4)) {
+      return failed(this).output("field4 is invalid").build();
     }
-    if (field4.matches(regex4)) {
-      return failed(this).build();
+    if (field5 == null || !field5.matches(regex5)) {
+      return failed(this).output("field5 is invalid").build();
     }
-    if (field5.matches(regex5)) {
-      return failed(this).build();
+    if (field6 == null || !field6.matches(regex6)) {
+      return failed(this).output("field6 is invalid").build();
     }
-    if (field6.matches(regex6)) {
-      return failed(this).build();
+    if (field7 == null || !field7.matches(regex7)) {
+      return failed(this).output("field7 is invalid").build();
     }
-    if (field7.matches(regex7)) {
-      return failed(this).build();
-    }
-    return success(this).build();
+    return failed(this).output("All fields are validated server side").build();
   }
 }
