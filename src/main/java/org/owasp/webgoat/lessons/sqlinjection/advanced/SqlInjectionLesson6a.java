@@ -64,11 +64,13 @@ public class SqlInjectionLesson6a implements AssignmentEndpoint {
     return accountName.matches("(?i)(^[^-/*;)]*)(\\s*)UNION(.*$)");
   }
 
-  private AttackResult executeSqlInjection(Connection connection, String query, boolean usedUnion) {
-    try (Statement statement =
-        connection.createStatement(ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_READ_ONLY)) {
-
-      ResultSet results = statement.executeQuery(query);
+  private AttackResult executeSqlInjection(
+      Connection connection, String query, String accountName, boolean usedUnion) {
+    try (java.sql.PreparedStatement statement =
+        connection.prepareStatement(
+            query, ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_READ_ONLY)) {
+      statement.setString(1, accountName);
+      ResultSet results = statement.executeQuery();
 
       if (!((results != null) && results.first())) {
         return failed(this)
