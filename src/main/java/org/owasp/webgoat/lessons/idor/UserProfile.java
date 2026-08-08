@@ -56,20 +56,26 @@ public class UserProfile {
 
   public String toHTMLString() {
     String htmlBreak = "<br/>";
+    // Profile fields are attacker controlled: they are HTML encoded so that stored values
+    // are rendered as text rather than executed as markup.
     return "userId"
-        + this.userId
+        + encode(this.userId)
         + htmlBreak
         + "name"
-        + this.name
+        + encode(this.name)
         + htmlBreak
         + "size"
-        + this.size
+        + encode(this.size)
         + htmlBreak
         + "role"
         + this.role
         + htmlBreak
         + "isAdmin"
         + this.isAdmin;
+  }
+
+  private static String encode(String value) {
+    return value == null ? "" : org.apache.commons.text.StringEscapeUtils.escapeHtml4(value);
   }
 
   //
