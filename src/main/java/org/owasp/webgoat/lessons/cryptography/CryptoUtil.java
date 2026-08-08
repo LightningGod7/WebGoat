@@ -37,9 +37,10 @@ public class CryptoUtil {
   public static KeyPair generateKeyPair()
       throws NoSuchAlgorithmException, InvalidAlgorithmParameterException {
     KeyPairGenerator keyPairGenerator = KeyPairGenerator.getInstance("RSA");
+    // A small RSA public exponent (3, 5, 17, 257) exposes the key to low exponent
+    // attacks. The standard exponent 65537 is always used.
     RSAKeyGenParameterSpec kpgSpec =
-        new RSAKeyGenParameterSpec(
-            2048, FERMAT_PRIMES[new SecureRandom().nextInt(FERMAT_PRIMES.length)]);
+        new RSAKeyGenParameterSpec(2048, RSAKeyGenParameterSpec.F4);
     keyPairGenerator.initialize(kpgSpec);
     // keyPairGenerator.initialize(2048);
     return keyPairGenerator.generateKeyPair();

@@ -28,16 +28,22 @@ $(document).ready(function () {
         '</div>' +
         '</li>';
 
+    // Review content is supplied by other users. Interpolating it into an HTML string
+    // executes whatever markup they stored, so every value is escaped to text first.
+    function escapeHtml(value) {
+        return $('<div>').text(value === null || value === undefined ? '' : value).html();
+    }
+
     getChallenges();
 
     function getChallenges() {
         $("#list").empty();
         $.get('csrf/review', function (result, status) {
             for (var i = 0; i < result.length; i++) {
-                var comment = html.replace('USER', result[i].user);
-                comment = comment.replace('DATETIME', result[i].dateTime);
-                comment = comment.replace('COMMENT', result[i].text);
-                comment = comment.replace('STARS', result[i].stars)
+                var comment = html.replace('USER', escapeHtml(result[i].user));
+                comment = comment.replace('DATETIME', escapeHtml(result[i].dateTime));
+                comment = comment.replace('COMMENT', escapeHtml(result[i].text));
+                comment = comment.replace('STARS', escapeHtml(result[i].stars))
                 $("#list").append(comment);
             }
 
