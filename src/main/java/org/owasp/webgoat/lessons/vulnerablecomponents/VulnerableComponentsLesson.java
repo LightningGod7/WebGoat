@@ -27,6 +27,10 @@ public class VulnerableComponentsLesson implements AssignmentEndpoint {
     xstream.setClassLoader(Contact.class.getClassLoader());
     xstream.alias("contact", ContactImpl.class);
     xstream.ignoreUnknownElements();
+    // Deny all types by default and allow only the type this endpoint legitimately accepts,
+    // so crafted XML cannot instantiate arbitrary gadget classes (remote code execution).
+    xstream.addPermission(com.thoughtworks.xstream.security.NoTypePermission.NONE);
+    xstream.allowTypes(new Class[] {ContactImpl.class});
     Contact contact = null;
 
     try {

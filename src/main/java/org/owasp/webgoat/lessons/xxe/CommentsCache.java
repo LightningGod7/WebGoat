@@ -71,9 +71,14 @@ public class CommentsCache {
     var xif = XMLInputFactory.newInstance();
 
     // TODO fix me disabled for now.
-    if (securityEnabled) {
-      xif.setProperty(XMLConstants.ACCESS_EXTERNAL_DTD, ""); // Compliant
-      xif.setProperty(XMLConstants.ACCESS_EXTERNAL_SCHEMA, ""); // compliant
+    // XXE defence is unconditional: it must not depend on a caller supplied flag.
+    xif.setProperty(XMLInputFactory.SUPPORT_DTD, false);
+    xif.setProperty(XMLInputFactory.IS_SUPPORTING_EXTERNAL_ENTITIES, false);
+    try {
+      xif.setProperty(XMLConstants.ACCESS_EXTERNAL_DTD, "");
+      xif.setProperty(XMLConstants.ACCESS_EXTERNAL_SCHEMA, "");
+    } catch (IllegalArgumentException unsupported) {
+      // Factory does not expose these properties; DTD support is already disabled above.
     }
 
     var xsr = xif.createXMLStreamReader(new StringReader(xml));
