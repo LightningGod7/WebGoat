@@ -68,8 +68,8 @@ public class JWTHeaderKIDEndpoint implements AssignmentEndpoint {
                       @Override
                       public byte[] resolveSigningKeyBytes(JwsHeader header, Claims claims) {
                         final String kid = (String) header.get("kid");
-                        try (var connection = dataSource.getConnection()) {
-                          var ps =
+                        try (java.sql.Connection connection = dataSource.getConnection()) {
+                          java.sql.PreparedStatement ps =
                               connection.prepareStatement(
                                   "SELECT key FROM jwt_keys WHERE id = ?");
                           ps.setString(1, kid);
