@@ -49,7 +49,9 @@ public class SimpleMailAssignment implements AssignmentEndpoint {
     String emailAddress = ofNullable(email).orElse("unknown@webgoat.org");
     String username = extractUsername(emailAddress);
 
-    if (username.equals(webGoatUsername) && StringUtils.reverse(username).equals(password)) {
+    // The reset password is random, so it can no longer be derived from the user name.
+    String issued = issuedPasswords.get(username);
+    if (username.equals(webGoatUsername) && issued != null && issued.equals(password)) {
       return success(this).build();
     } else {
       return failed(this).feedbackArgs("password-reset-simple.password_incorrect").build();
@@ -66,6 +68,15 @@ public class SimpleMailAssignment implements AssignmentEndpoint {
     return sendEmail(extractUsername(email), email, username);
   }
 
+  private static final java.util.Map<String, String> issuedPasswords =
+      new java.util.concurrent.ConcurrentHashMap<>();
+
+  private static String randomPassword() {
+    byte[] raw = new byte[24];
+    new java.security.SecureRandom().nextBytes(raw);
+    return java.util.Base64.getUrlEncoder().withoutPadding().encodeToString(raw);
+  }
+
   private String extractUsername(String email) {
     int index = email.indexOf("@");
     return email.substring(0, index == -1 ? email.length() : index);
@@ -73,14 +84,15 @@ public class SimpleMailAssignment implements AssignmentEndpoint {
 
   private AttackResult sendEmail(String username, String email, String webGoatUsername) {
     if (username.equals(webGoatUsername)) {
+      String newPassword = randomPassword();
+      issuedPasswords.put(username, newPassword);
       PasswordResetEmail mailEvent =
           PasswordResetEmail.builder()
               .recipient(username)
               .title("Simple e-mail assignment")
               .time(LocalDateTime.now())
               .contents(
-                  "Thanks for resetting your password, your new password is: "
-                      + StringUtils.reverse(username))
+                  "Thanks for resetting your password, your new password is: " + newPassword)
               .sender("webgoat@owasp.org")
               .build();
       try {

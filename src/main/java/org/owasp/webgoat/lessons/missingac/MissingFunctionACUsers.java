@@ -51,7 +51,12 @@ public class MissingFunctionACUsers {
       path = {"access-control/users"},
       consumes = "application/json")
   @ResponseBody
-  public ResponseEntity<List<DisplayUser>> usersService() {
+  public ResponseEntity<List<DisplayUser>> usersService(@CurrentUsername String username) {
+    // Function level access control: the user listing is administrative data.
+    var caller = userRepository.findByUsername(username);
+    if (caller == null || !caller.isAdmin()) {
+      return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+    }
     return ResponseEntity.ok(
         userRepository.findAllUsers().stream()
             .map(user -> new DisplayUser(user, PASSWORD_SALT_SIMPLE))
@@ -78,7 +83,11 @@ public class MissingFunctionACUsers {
       consumes = "application/json",
       produces = "application/json")
   @ResponseBody
-  public User addUser(@RequestBody User newUser) {
+  public User addUser(@RequestBody User newUser, @CurrentUsername String username) {
+    var caller = userRepository.findByUsername(username);
+    if (caller == null || !caller.isAdmin()) {
+      return null;
+    }
     try {
       userRepository.save(newUser);
       return newUser;

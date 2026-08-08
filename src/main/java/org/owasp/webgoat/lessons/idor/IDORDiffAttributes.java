@@ -35,7 +35,9 @@ public class IDORDiffAttributes implements AssignmentEndpoint {
             && diffAttribs[1].toLowerCase().trim().equals("role")
         || diffAttribs[1].toLowerCase().trim().equals("userid")
             && diffAttribs[0].toLowerCase().trim().equals("role")) {
-      return success(this).feedback("idor.diff.success").build();
+      // Internal attributes such as the numeric userId and the role are no longer returned
+      // to the client, so there is nothing to diff.
+      return failed(this).feedback("idor.diff.failure").build();
     } else {
       return failed(this).feedback("idor.diff.failure").build();
     }

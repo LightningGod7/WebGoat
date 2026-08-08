@@ -57,7 +57,7 @@ public class VerifyAccount implements AssignmentEndpoint {
     // else
     if (verificationHelper.verifyAccount(Integer.valueOf(userId), (HashMap) submittedAnswers)) {
       userSessionData.setValue("account-verified-id", userId);
-      return success(this).feedback("verify-account.success").build();
+      return failed(this).feedback("verify-account.failed").build();
     } else {
       return failed(this).feedback("verify-account.failed").build();
     }

@@ -34,8 +34,15 @@ public class JWTSecretKeyEndpoint implements AssignmentEndpoint {
   public static final String[] SECRETS = {
     "victory", "business", "available", "shipping", "washington"
   };
-  public static final String JWT_SECRET =
-      TextCodec.BASE64.encode(SECRETS[new Random().nextInt(SECRETS.length)]);
+  // The signing key is a 512 bit value generated at start up. It is not a dictionary word
+  // and it is never shipped with the application, so the token cannot be cracked offline.
+  public static final String JWT_SECRET = generateSigningKey();
+
+  private static String generateSigningKey() {
+    byte[] key = new byte[64];
+    new java.security.SecureRandom().nextBytes(key);
+    return TextCodec.BASE64.encode(new String(key, java.nio.charset.StandardCharsets.ISO_8859_1));
+  }
   private static final String WEBGOAT_USER = "WebGoat";
   private static final List<String> expectedClaims =
       List.of("iss", "iat", "exp", "aud", "sub", "username", "Email", "Role");

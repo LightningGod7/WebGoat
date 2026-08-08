@@ -29,6 +29,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.util.HtmlUtils;
 
 @RestController
 public class StoredXssComments implements AssignmentEndpoint {
@@ -66,6 +67,7 @@ public class StoredXssComments implements AssignmentEndpoint {
     if (newComments != null) {
       allComments.addAll(newComments);
     }
+    allComments.forEach(c -> c.setText(HtmlUtils.htmlEscape(c.getText() == null ? "" : c.getText())));
     Collections.reverse(allComments);
     return allComments;
   }
@@ -75,6 +77,9 @@ public class StoredXssComments implements AssignmentEndpoint {
   public AttackResult createNewComment(
       @RequestBody String commentStr, @CurrentUsername String username) {
     Comment comment = parseJson(commentStr);
+    // Stored XSS: encode the untrusted comment before it is persisted so it can never
+    // be returned to another user as live markup.
+    comment.setText(HtmlUtils.htmlEscape(comment.getText() == null ? "" : comment.getText()));
 
     List<Comment> comments = userComments.getOrDefault(username, new ArrayList<>());
     comment.setDateTime(LocalDateTime.now().format(fmt));

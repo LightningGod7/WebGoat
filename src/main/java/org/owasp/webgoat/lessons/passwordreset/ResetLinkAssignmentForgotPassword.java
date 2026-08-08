@@ -36,18 +36,21 @@ public class ResetLinkAssignmentForgotPassword implements AssignmentEndpoint {
   private final String webWolfPort;
   private final String webWolfURL;
   private final String webWolfMailURL;
+  private final String trustedHost;
 
   public ResetLinkAssignmentForgotPassword(
       RestTemplate restTemplate,
       @Value("${webwolf.host}") String webWolfHost,
       @Value("${webwolf.port}") String webWolfPort,
       @Value("${webwolf.url}") String webWolfURL,
-      @Value("${webwolf.mail.url}") String webWolfMailURL) {
+      @Value("${webwolf.mail.url}") String webWolfMailURL,
+      @Value("${server.address:localhost}:${server.port:8080}") String trustedHost) {
     this.restTemplate = restTemplate;
     this.webWolfHost = webWolfHost;
     this.webWolfPort = webWolfPort;
     this.webWolfURL = webWolfURL;
     this.webWolfMailURL = webWolfMailURL;
+    this.trustedHost = trustedHost;
   }
 
   @PostMapping("/PasswordReset/ForgotPassword/create-password-reset-link")
@@ -56,18 +59,14 @@ public class ResetLinkAssignmentForgotPassword implements AssignmentEndpoint {
       @RequestParam String email, HttpServletRequest request, @CurrentUsername String username) {
     String resetLink = UUID.randomUUID().toString();
     ResetLinkAssignment.resetLinks.add(resetLink);
-    String host = request.getHeader(HttpHeaders.HOST);
-    if (ResetLinkAssignment.TOM_EMAIL.equals(email)
-        && (host.contains(webWolfPort)
-            && host.contains(webWolfHost))) { // User indeed changed the host header.
-      ResetLinkAssignment.userToTomResetLink.put(username, resetLink);
-      fakeClickingLinkEmail(webWolfURL, resetLink);
-    } else {
-      try {
-        sendMailToUser(email, host, resetLink);
-      } catch (Exception e) {
-        return failed(this).output("E-mail can't be send. please try again.").build();
-      }
+    // Host header injection: the link in the mail is built from the server's own configured
+    // address. The Host header is attacker controlled and is never used to build a URL that
+    // carries a password reset token.
+    String host = trustedHost;
+    try {
+      sendMailToUser(email, host, resetLink);
+    } catch (Exception e) {
+      return failed(this).output("E-mail can't be send. please try again.").build();
     }
 
     return success(this).feedback("email.send").feedbackArgs(email).build();

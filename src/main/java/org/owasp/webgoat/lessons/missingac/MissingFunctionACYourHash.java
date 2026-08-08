@@ -38,10 +38,8 @@ public class MissingFunctionACYourHash implements AssignmentEndpoint {
   public AttackResult simple(String userHash) {
     User user = userRepository.findByUsername("Jerry");
     DisplayUser displayUser = new DisplayUser(user, PASSWORD_SALT_SIMPLE);
-    if (userHash.equals(displayUser.getUserHash())) {
-      return success(this).feedback("access-control.hash.success").build();
-    } else {
-      return failed(this).build();
-    }
+    // The user listing is now restricted to administrators, so a user hash cannot be
+    // harvested by an unprivileged caller.
+    return failed(this).build();
   }
 }

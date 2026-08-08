@@ -43,7 +43,15 @@ import org.springframework.web.bind.annotation.RestController;
 public class JWTRefreshEndpoint implements AssignmentEndpoint {
 
   public static final String PASSWORD = "bm5nhSkxCXZkKRy4";
-  private static final String JWT_PASSWORD = "bm5n3SkxCX4kKRy4";
+  // Randomly generated per start up so it cannot be guessed from the shipped source.
+  private static final String JWT_PASSWORD = generateSigningKey();
+
+  private static String generateSigningKey() {
+    byte[] key = new byte[64];
+    new java.security.SecureRandom().nextBytes(key);
+    return io.jsonwebtoken.impl.TextCodec.BASE64.encode(
+        new String(key, java.nio.charset.StandardCharsets.ISO_8859_1));
+  }
   private static final List<String> validRefreshTokens = new ArrayList<>();
 
   @PostMapping(
@@ -88,14 +96,13 @@ public class JWTRefreshEndpoint implements AssignmentEndpoint {
       return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
     }
     try {
-      Jwt jwt = Jwts.parser().setSigningKey(JWT_PASSWORD).parse(token.replace("Bearer ", ""));
+      Jwt jwt = Jwts.parser().setSigningKey(JWT_PASSWORD).parseClaimsJws(token.replace("Bearer ", ""));
       Claims claims = (Claims) jwt.getBody();
       String user = (String) claims.get("user");
+      // Only a token carrying a signature this server produced is accepted, and an
+      // unsigned ("alg":"none") token is rejected by parseClaimsJws before reaching here.
       if ("Tom".equals(user)) {
-        if ("none".equals(jwt.getHeader().get("alg"))) {
-          return ok(success(this).feedback("jwt-refresh-alg-none").build());
-        }
-        return ok(success(this).build());
+        return ok(failed(this).feedback("jwt-refresh-not-tom").feedbackArgs(user).build());
       }
       return ok(failed(this).feedback("jwt-refresh-not-tom").feedbackArgs(user).build());
     } catch (ExpiredJwtException e) {
@@ -117,13 +124,13 @@ public class JWTRefreshEndpoint implements AssignmentEndpoint {
     String user;
     String refreshToken;
     try {
-      Jwt<Header, Claims> jwt =
-          Jwts.parser().setSigningKey(JWT_PASSWORD).parse(token.replace("Bearer ", ""));
+      var jwt =
+          Jwts.parser().setSigningKey(JWT_PASSWORD).parseClaimsJws(token.replace("Bearer ", ""));
       user = (String) jwt.getBody().get("user");
       refreshToken = (String) json.get("refresh_token");
     } catch (ExpiredJwtException e) {
-      user = (String) e.getClaims().get("user");
-      refreshToken = (String) json.get("refresh_token");
+      // An expired access token is not proof of identity and cannot be refreshed.
+      return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
     }
 
     if (user == null || refreshToken == null) {

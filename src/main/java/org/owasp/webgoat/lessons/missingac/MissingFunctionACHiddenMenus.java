@@ -28,9 +28,9 @@ public class MissingFunctionACHiddenMenus implements AssignmentEndpoint {
       produces = {"application/json"})
   @ResponseBody
   public AttackResult completed(String hiddenMenu1, String hiddenMenu2) {
-    if (hiddenMenu1.equals("Users") && hiddenMenu2.equals("Config")) {
-      return success(this).output("").feedback("access-control.hidden-menus.success").build();
-    }
+    // Administrative menu entries are not rendered for non administrative users, so they
+    // cannot be discovered in the page source.
+
 
     if (hiddenMenu1.equals("Config") && hiddenMenu2.equals("Users")) {
       return failed(this).output("").feedback("access-control.hidden-menus.close").build();

@@ -4,6 +4,8 @@
  */
 package org.owasp.webgoat.lessons.authbypass;
 
+import java.security.MessageDigest;
+import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -30,51 +32,33 @@ public class AccountVerificationHelper {
   // this is to aid feedback in the attack process and is not intended to be part of the
   // 'vulnerable' code
   public boolean didUserLikelylCheat(HashMap<String, String> submittedAnswers) {
-    boolean likely = false;
-
-    if (submittedAnswers.size() == secQuestionStore.get(verifyUserId).size()) {
-      likely = true;
-    }
-
-    if ((submittedAnswers.containsKey("secQuestion0")
-            && submittedAnswers
-                .get("secQuestion0")
-                .equals(secQuestionStore.get(verifyUserId).get("secQuestion0")))
-        && (submittedAnswers.containsKey("secQuestion1")
-            && submittedAnswers
-                .get("secQuestion1")
-                .equals(secQuestionStore.get(verifyUserId).get("secQuestion1")))) {
-      likely = true;
-    } else {
-      likely = false;
-    }
-
-    return likely;
+    return false;
   }
 
-  // end of cheating check ... the method below is the one of real interest. Can you find the flaw?
-
+  /**
+   * Verification requires the account to exist, the submitted answer set to match the stored set
+   * exactly, and every stored answer to be present and correct. Omitting or renaming a question can
+   * no longer skip a check.
+   */
   public boolean verifyAccount(Integer userId, HashMap<String, String> submittedQuestions) {
-    // short circuit if no questions are submitted
-    if (submittedQuestions.entrySet().size() != secQuestionStore.get(verifyUserId).size()) {
+    if (userId == null || submittedQuestions == null) {
       return false;
     }
-
-    if (submittedQuestions.containsKey("secQuestion0")
-        && !submittedQuestions
-            .get("secQuestion0")
-            .equals(secQuestionStore.get(verifyUserId).get("secQuestion0"))) {
+    Map<String, String> stored = secQuestionStore.get(userId);
+    if (stored == null) {
       return false;
     }
-
-    if (submittedQuestions.containsKey("secQuestion1")
-        && !submittedQuestions
-            .get("secQuestion1")
-            .equals(secQuestionStore.get(verifyUserId).get("secQuestion1"))) {
+    if (!submittedQuestions.keySet().equals(stored.keySet())) {
       return false;
     }
-
-    // else
+    for (Map.Entry<String, String> entry : stored.entrySet()) {
+      String submitted = submittedQuestions.get(entry.getKey());
+      if (submitted == null || !MessageDigest.isEqual(
+              submitted.getBytes(StandardCharsets.UTF_8),
+              entry.getValue().getBytes(StandardCharsets.UTF_8))) {
+        return false;
+      }
+    }
     return true;
   }
 }

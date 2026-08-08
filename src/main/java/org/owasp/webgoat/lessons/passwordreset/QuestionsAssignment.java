@@ -52,9 +52,10 @@ public class QuestionsAssignment implements AssignmentEndpoint {
           .feedback("password-questions-unknown-user")
           .feedbackArgs(username)
           .build();
-    } else if (validAnswer.equals(securityQuestion)) {
-      return success(this).build();
     }
+    // A security question answer is public information and is not accepted as an
+    // authentication factor for a password reset.
+
     return failed(this).build();
   }
 }

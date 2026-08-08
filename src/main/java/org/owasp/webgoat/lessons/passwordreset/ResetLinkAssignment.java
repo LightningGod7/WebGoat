@@ -114,6 +114,8 @@ public class ResetLinkAssignment implements AssignmentEndpoint {
       modelAndView.setViewName(VIEW_FORMATTER.formatted("password_link_not_found"));
       return modelAndView;
     }
+    // A reset token is single use: it is invalidated as soon as it has been redeemed.
+    resetLinks.remove(form.getResetLink());
     if (checkIfLinkIsFromTom(form.getResetLink(), username)) {
       usersToTomPassword.put(username, form.getPassword());
     }

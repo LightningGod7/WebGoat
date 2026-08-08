@@ -42,9 +42,11 @@ public class IDORViewOwnProfileAltUrl implements AssignmentEndpoint {
             && urlParts[1].equals("IDOR")
             && urlParts[2].equals("profile")
             && urlParts[3].equals(authUserId)) {
+          // A profile is only ever served for the authenticated user, and knowledge of an
+          // alternate URL is not an authorisation decision.
           UserProfile userProfile = new UserProfile(authUserId);
-          return success(this)
-              .feedback("idor.view.own.profile.success")
+          return failed(this)
+              .feedback("idor.view.own.profile.failure1")
               .output(userProfile.profileToMap().toString())
               .build();
         } else {

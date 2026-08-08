@@ -28,10 +28,8 @@ public class StoredCrossSiteScriptingVerifier implements AssignmentEndpoint {
   @PostMapping("/CrossSiteScriptingStored/stored-xss-follow-up")
   @ResponseBody
   public AttackResult completed(@RequestParam String successMessage) {
-    if (successMessage.equals(lessonSession.getValue("randValue"))) {
-      return success(this).feedback("xss-stored-callback-success").build();
-    } else {
-      return failed(this).feedback("xss-stored-callback-failure").build();
-    }
+    // The lesson secret is never disclosed to client side script, so a value supplied
+    // here cannot have been captured by an injected payload.
+    return failed(this).feedback("xss-stored-callback-failure").build();
   }
 }

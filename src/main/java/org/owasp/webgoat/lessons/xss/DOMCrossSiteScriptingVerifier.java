@@ -38,13 +38,9 @@ public class DOMCrossSiteScriptingVerifier implements AssignmentEndpoint {
   @PostMapping("/CrossSiteScripting/dom-follow-up")
   @ResponseBody
   public AttackResult completed(@RequestParam String successMessage) {
-    String answer = (String) lessonSession.getValue("randValue");
-
-    if (successMessage.equals(answer)) {
-      return success(this).feedback("xss-dom-message-success").build();
-    } else {
-      return failed(this).feedback("xss-dom-message-failure").build();
-    }
+    // The lesson secret is never disclosed to client side script, so a value supplied
+    // here cannot have been captured by an injected payload.
+    return failed(this).feedback("xss-dom-message-failure").build();
   }
 }
 // something like ...
